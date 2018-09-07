@@ -33,6 +33,7 @@ namespace FilterObservableCollection
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private List<City> sourceLst = new List<City>();
         private ObservableCollection<City> cityList = new ObservableCollection<City>();
         private string searchText;
 
@@ -62,7 +63,16 @@ namespace FilterObservableCollection
                 {
                     searchText = value;
                     OnPropertyChanged("SearchText");
-                    CityListView.Refresh();
+                    //CityListView.Refresh();
+
+                    var filter = (from p in sourceLst
+                                 let nm = p.Name
+                                 where nm.ToLower().Contains(searchText.ToLower()) ||
+                                 nm.Contains(searchText)
+                                 orderby nm
+                                 select p).Take(10);
+
+                    CityList = new ObservableCollection<City>(filter); 
                 }
             }
         }
@@ -71,16 +81,32 @@ namespace FilterObservableCollection
             InitializeComponent();
             this.DataContext = this;
             populateData();
-            CityListView.Filter = new Predicate<object>(o => SearchData(o as City));
+            //CityListView.Filter = new Predicate<object>(o => SearchData(o as City));
         }
 
         private void populateData()
         {
-            CityList.Add(new City { ID = 1, Name = "New York" });
-            CityList.Add(new City { ID = 2, Name = "Boston" });
-            CityList.Add(new City { ID = 3, Name = "Seattle" });
-            CityList.Add(new City { ID = 4, Name = "Los Angeles" });
-            CityList.Add(new City { ID = 5, Name = "Houston" });
+            sourceLst.Add(new City { ID = 1, Name = "New York" });
+            sourceLst.Add(new City { ID = 2, Name = "Boston" });
+            sourceLst.Add(new City { ID = 3, Name = "Seattle" });
+            sourceLst.Add(new City { ID = 4, Name = "Los Angeles" });
+            sourceLst.Add(new City { ID = 5, Name = "Houston" });
+
+            for (int i = 6; i < 10000; i++)
+            {
+                sourceLst.Add(new City { ID = i, Name = "_" + RandomString(5) + i.ToString() });
+            }
+
+            //cityList = sourceLst;
+        }
+
+        //https://stackoverflow.com/questions/1344221/how-can-i-generate-random-alphanumeric-strings-in-c
+        private static Random random = new Random();
+        public static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         private bool SearchData(City city)
